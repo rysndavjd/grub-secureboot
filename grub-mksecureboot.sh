@@ -43,7 +43,7 @@ cp -R /boot/grub/fonts /boot/grub/grub* "$memdiskpath/"
 mksquashfs "$memdiskdir/memdisk" "$memdiskdir/memdisk.squashfs" -comp xz
 #Makes grub efi image with embedded memdisk, sbat for secureboot and all modules in $grubmodules
 grub-mkimage --config="$memdiskdir/grub-bootstrap.cfg" --directory=/usr/lib/grub/x86_64-efi --output=./grubx64.efi --sbat=/usr/share/grub/sbat.csv --format=x86_64-efi --memdisk="$memdiskdir/memdisk.squashfs" $grubmodules
-#moves finisged grub image to efi directory
+#moves finished grub image to efi directory
 mv ./grubx64.efi "$grubefi"
 #signs the grub image for shim 
 sbsign --key $MOKkeypath/MOK.key --cert $MOKkeypath/MOK.crt --output "$grubefi" "$grubefi"
