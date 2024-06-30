@@ -1,0 +1,4 @@
+memdiskdir/memdisk/grub.cfg
+memdiskdir/memdisk/grubenv
+memdiskdir/memdisk/fonts/unicode.pf2
+memdiskdir/grub-bootstrap.cfg
