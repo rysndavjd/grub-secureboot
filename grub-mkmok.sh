@@ -7,7 +7,8 @@ then
 fi
 
 if ! command openssl 2>/dev/null; then
-    echo "Openssl not found. Is it installed?"  
+    echo "Openssl not found. Is openssl installed?"  
+    exit 1
 fi
 
 if [ -e "/root/mok/MOK.key" ]
