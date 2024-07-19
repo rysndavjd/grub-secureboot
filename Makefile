@@ -8,9 +8,9 @@ all: help
 install:
 	@echo "Install directory is $(installdir)"
 	cp ./grub-mkmok.sh $(installdir)/grub-mkmok
-	chmod 555 $(installdir)/grub-mkmok
+	chmod 755 $(installdir)/grub-mkmok
 	cp ./grub-mksecureboot.sh $(installdir)/grub-mksecureboot
-	chmod 555 $(installdir)/grub-mksecureboot
+	chmod 755 $(installdir)/grub-mksecureboot
 
 uninstall:
 	rm $(installdir)/grub-mkmok
