@@ -101,20 +101,10 @@ mkdir -p $memdiskdir/memdisk/
 grub-mkconfig -o "$memdiskdir/memdisk/grub.cfg"
 grub-install --no-nvram --no-bootsector --force --efi-directory=$tmp --boot-directory=$tmp >> /dev/null 2>&1
 
-grubcryptodisk () {
-    while read -r cryptodisk ; do
-        echo $cryptodisk | grep "^GRUB_ENABLE_CRYPTODISK=" | tr -d GRUB_ENABLE_CRYPTODISK=
-    done < "/etc/default/grub"
-}
 
-if [[ $(grubcryptodisk) == "y" ]] ; then
-    cat "$tmp/grub/x86_64-efi/load.cfg" > "$memdiskdir/grub-bootstrap.cfg"
-    cat >> "$memdiskdir/grub-bootstrap.cfg" <<< "set prefix=\"(memdisk)\""
-else
-    echo "GRUB_ENABLE_CRYPTODISK=n or not in /etc/default/grub"
-    touch "$memdiskdir/grub-bootstrap.cfg"
-    cat >> "$memdiskdir/grub-bootstrap.cfg" <<< "set prefix=\"(memdisk)\""
-fi
+echo "GRUB_ENABLE_CRYPTODISK=n or not in /etc/default/grub"
+touch "$memdiskdir/grub-bootstrap.cfg"
+cat >> "$memdiskdir/grub-bootstrap.cfg" <<< "set prefix=\"(memdisk)\""
 
 cp -R $tmp/grub/fonts $tmp/grub/grubenv "/$memdiskdir/memdisk/"
 mksquashfs "$memdiskdir/memdisk" "$memdiskdir/memdisk.squashfs" -comp gzip >> /dev/null 2>&1
