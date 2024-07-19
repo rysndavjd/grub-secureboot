@@ -12,7 +12,6 @@ tmp="/tmp/grub"
 trap clean INT
 
 clean () {
-    echo "Ctrl + C happened"
     rm $tmp -r
 }
 
@@ -100,7 +99,7 @@ mkdir -p $tmp
 mkdir -p $memdiskdir/memdisk/
 
 grub-mkconfig -o "$memdiskdir/memdisk/grub.cfg"
-grub-install --no-nvram --no-bootsector --force --efi-directory=$tmp --boot-directory=$tmp
+grub-install --no-nvram --no-bootsector --force --efi-directory=$tmp --boot-directory=$tmp >> /dev/null 2>&1
 
 grubcryptodisk () {
     while read -r cryptodisk ; do
@@ -118,9 +117,9 @@ else
 fi
 
 cp -R $tmp/grub/fonts $tmp/grub/grubenv "/$memdiskdir/memdisk/"
-mksquashfs "$memdiskdir/memdisk" "$memdiskdir/memdisk.squashfs" -comp gz >> /dev/null 2>&1
+mksquashfs "$memdiskdir/memdisk" "$memdiskdir/memdisk.squashfs" -comp gzip >> /dev/null 2>&1
 grub-mkimage --config="$memdiskdir/grub-bootstrap.cfg" --directory=/usr/lib/grub/x86_64-efi --output=$installpath/grubx64.efi --sbat=/usr/share/grub/sbat.csv --format=x86_64-efi --memdisk="$memdiskdir/memdisk.squashfs" $grubmodules
 sbsign --key $mokpath/MOK.key --cert $mokpath/MOK.crt --output "$installpath/grubx64.efi" "$installpath/grubx64.efi" >> /dev/null 2>&1
-clean()
+clean
 
 echo "Finished"
