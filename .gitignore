@@ -4,3 +4,4 @@ memdiskdir/memdisk/fonts/unicode.pf2
 memdiskdir/grub-bootstrap.cfg
 memdiskdir
 test.sh
+releases

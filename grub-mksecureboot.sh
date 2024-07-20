@@ -7,7 +7,7 @@ then
     exit 1
 fi
 
-tmp="/tmp/grub"
+tmp="/tmp/grub-secureboot"
 
 trap clean INT
 
@@ -99,17 +99,27 @@ mkdir -p $tmp
 mkdir -p $memdiskdir/memdisk/
 
 grub-mkconfig -o "$memdiskdir/memdisk/grub.cfg"
-grub-install --no-nvram --no-bootsector --force --efi-directory=$tmp --boot-directory=$tmp >> /dev/null 2>&1
+grub-install --no-nvram --no-bootsector --force --efi-directory=$efipath --boot-directory=/boot >> /dev/null 2>&1
 
+grubcryptodisk () {
+    while read -r cryptodisk ; do
+        echo $cryptodisk | grep "^GRUB_ENABLE_CRYPTODISK=" | tr -d GRUB_ENABLE_CRYPTODISK=
+    done < "/etc/default/grub"
+}
 
-echo "GRUB_ENABLE_CRYPTODISK=n or not in /etc/default/grub"
-touch "$memdiskdir/grub-bootstrap.cfg"
-cat >> "$memdiskdir/grub-bootstrap.cfg" <<< "set prefix=\"(memdisk)\""
+if [[ $(grubcryptodisk) == "y" ]] ; then
+    cat "$tmp/grub/x86_64-efi/load.cfg" > "$memdiskdir/grub-bootstrap.cfg"
+    cat >> "$memdiskdir/grub-bootstrap.cfg" <<< "set prefix=\"(memdisk)\""
+else
+    echo "GRUB_ENABLE_CRYPTODISK=n or not set in /etc/default/grub"
+    touch "$memdiskdir/grub-bootstrap.cfg"
+    cat >> "$memdiskdir/grub-bootstrap.cfg" <<< "set prefix=\"(memdisk)\""
+fi
 
-cp -R $tmp/grub/fonts $tmp/grub/grubenv "/$memdiskdir/memdisk/"
+cp -R $efipath/grub/fonts $efipath/grub/grubenv "/$memdiskdir/memdisk/"
 mksquashfs "$memdiskdir/memdisk" "$memdiskdir/memdisk.squashfs" -comp gzip >> /dev/null 2>&1
 grub-mkimage --config="$memdiskdir/grub-bootstrap.cfg" --directory=/usr/lib/grub/x86_64-efi --output=$installpath/grubx64.efi --sbat=/usr/share/grub/sbat.csv --format=x86_64-efi --memdisk="$memdiskdir/memdisk.squashfs" $grubmodules
 sbsign --key $mokpath/MOK.key --cert $mokpath/MOK.crt --output "$installpath/grubx64.efi" "$installpath/grubx64.efi" >> /dev/null 2>&1
-clean
+#clean
 
 echo "Finished"
