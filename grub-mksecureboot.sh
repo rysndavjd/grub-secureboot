@@ -111,17 +111,18 @@ mkdir -p $memdiskdir/memdisk/fonts
 
 checklayout () {
     cryptodiskuuidboot=$(grub-probe $bootpath -t cryptodisk_uuid)
-    bootdevice=$(grub-probe -t device $bootpath)
-    efidevice=$(grub-probe -t device $efipath)
-    rootdevice=$(grub-probe -t device /)
     bootuuid=$(grub-probe -t fs_uuid $bootpath)
     efiuuid=$(grub-probe -t fs_uuid $efipath)
     rootuuid=$(grub-probe -t fs_uuid /)
-    roottype=$(blkid $rootdevice -s TYPE -o value)
+
+    cryptodisk () {
+        grub-probe -t drive $1 | grep cryptouuid >> /dev/null 2>&1
+        return $?
+    }
 
     #check if / is encrypted
-    if [[ $(blkid $rootdevice -s TYPE -o value) == "crypto_LUKS" ]] ; then
-        #check if boot is actual on root that is encrypted as one partition
+    if cryptodisk / ; then
+        #check if boot is actual on root that is encrypted as one partition via its uuid
         if [[ $bootuuid == $rootuuid ]] ; then
             #Here assume disk layout is 
             #efi - unencrypted
@@ -132,7 +133,7 @@ set prefix="(memdisk)"
 configfile (crypto0)/boot/grub/grub.cfg
 EOT
             echo "Layout detected: EFI + encrypted root with boot."
-        #check boot is separate partition 
+        #boot is separate partition as uuid not equal
         elif [[ $bootuuid != $rootuuid ]] ; then
             #Here assume disk layout is 
             #efi - unencrypted
@@ -145,8 +146,8 @@ configfile (crypto0)/grub/grub.cfg
 EOT
             echo "Layout detected: EFI + encrypted boot + encrypted root."
         fi
-    #No encryption, standard install
-    elif [[ $(blkid $rootdevice -s TYPE -o value) != "crypto_LUKS" ]] ; then
+    #/ not encrypted, standard install
+    else
         #check if boot is actual on root as one partition
         if [[ $bootuuid == $rootuuid ]] ; then
             #Here assume disk layout is 
@@ -173,11 +174,7 @@ configfile (\$root)/grub/grub.cfg
 EOT
             echo "Layout detected: EFI + unencrypted boot + unencrypted root."
         fi
-    else
-        echo "Mate, something is hella broken or you just typed your boot or ESP directorys wrong"
-        exit 3
     fi
-
 }
 
 makegrub () {
