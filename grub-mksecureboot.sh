@@ -139,16 +139,30 @@ EOT
             echo "Layout detected: EFI + encrypted root with boot."
         #boot is separate partition as uuid not equal
         elif [[ $bootuuid != $rootuuid ]] ; then
-            #Here assume disk layout is 
-            #efi - unencrypted
-            #boot - encrypted
-            #root - encrypted
-            cat <<EOT >> $memdiskdir/grub-bootstrap.cfg
+            #Check if boot is encrypted
+            if cryptodisk $bootpath ; then
+                #Here assume disk layout is 
+                #efi - unencrypted
+                #boot - encrypted
+                #root - encrypted
+                cat <<EOT >> $memdiskdir/grub-bootstrap.cfg
 cryptomount -u $cryptodiskuuidboot
 set prefix="(memdisk)"
 configfile (crypto0)/grub/grub.cfg
 EOT
-            echo "Layout detected: EFI + encrypted boot + encrypted root."
+                echo "Layout detected: EFI + encrypted boot + encrypted root."
+            else
+                #Here assume disk layout is 
+                #efi - unencrypted
+                #boot - unencrypted
+                #root - encrypted
+                cat <<EOT >> $memdiskdir/grub-bootstrap.cfg
+cryptomount -u $cryptodiskuuidboot
+set prefix="(memdisk)"
+configfile (crypto0)/boot/grub/grub.cfg
+EOT
+                echo "Layout detected: EFI + unencrypted boot + encrypted root."
+            fi
         fi
     #/ not encrypted, standard install
     else
