@@ -157,9 +157,9 @@ EOT
                 #boot - unencrypted
                 #root - encrypted
                 cat <<EOT >> $memdiskdir/grub-bootstrap.cfg
-cryptomount -u $cryptodiskuuidboot
-set prefix="(memdisk)"
-configfile (crypto0)/boot/grub/grub.cfg
+prefix="(memdisk)"
+search.fs_uuid $bootuuid root
+configfile ($root)/grub/grub.cfg
 EOT
                 echo "Layout detected: EFI + unencrypted boot + encrypted root."
             fi
