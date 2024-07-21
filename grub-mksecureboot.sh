@@ -18,34 +18,45 @@ clean () {
 if ! command -v mksquashfs >/dev/null; then
     echo "mksquashfs not found. Is squashfs-tools installed?" 
     exit 1
-elif ! command -v grub-install >/dev/null; then
-    echo "grub-install not found. Is grub installed?" 
+elif ! command -v grub-mkimage >/dev/null; then
+    echo "grub-mkimage not found. Is grub installed?" 
     exit 1
 elif ! command -v sbsign >/dev/null; then
     echo "sbsign not found. Is sbsigntools installed?" 
     exit 1
 fi
 
-if [ "$1" = -h ] ; then
-    echo ""
-    echo ""
-    echo ""
-    echo ""
-    echo ""
-    echo ""
+help () {
+    echo "grub-mksecureboot, version 0.2"
+    echo "Usage: grub-mksecureboot [option] ..."
+    echo "Options:"
+    echo "      -h  (calls help menu)"
+    echo "      -d  (distro name eg: gentoo)"
+    echo "      -e  (EFI path eg: /efi)"
+    echo "      -b  (Boot path eg: /boot)"
+    echo "      -m  (Modules included in grub, default all is selected [all, luks, normal])"
+    echo "      -k  (Machine Owner Key path, defaults to /root/mok)"
     exit 0
-fi
+}
 
-while getopts d:e:b:m:k: flag
-do
+while getopts hd:e:b:m:k: flag; do
     case "${flag}" in
+        h) help;;
         d) distro=${OPTARG};;
         e) efipath=${OPTARG};;
         b) bootpath=${OPTARG};;
         m) moduletype=${OPTARG};;
         k) mokpath=${OPTARG};;
+        ?) help;;
     esac
 done
+
+if [[ -z $efipath ]] ; then
+    echo "Set -e flag, do -h for help"
+    exit 2
+else 
+    echo "EFI path set to $efipath."
+fi
 
 release () {
     while read -r os ; do
@@ -60,15 +71,8 @@ else
     echo "distro set to $distro"
 fi
 
-if [[ -z $efipath ]] ; then
-    echo "Set -e flag for efi path. Example /efi."
-    exit 2
-else 
-    echo "EFI path set to $efipath."
-fi
-
 if [[ -z $bootpath ]] ; then
-    echo "Set -b flag for boot path. Example /boot."
+    echo "Set -b flag, do -h for help"
     exit 2
 else 
     echo "Boot path set to $bootpath."
