@@ -27,7 +27,7 @@ elif ! command -v sbsign >/dev/null; then
 fi
 
 help () {
-    echo "grub-mksecureboot, version 0.2"
+    echo "grub-mksecureboot, version 0.3"
     echo "Usage: grub-mksecureboot [option] ..."
     echo "Options:"
     echo "      -h  (calls help menu)"
