@@ -1,7 +1,7 @@
 # grub-secureboot
 grub-secureboot is a script that detects partition layout of a system, generates a grub EFI image via grub-mkimage, signs grub image for secureboot and installs grub to EFI partition.
 
-## Usage 
+## grub-mksecureboot Usage 
 ```
 Usage: grub-mksecureboot [option] ...
     Options:
@@ -11,6 +11,15 @@ Usage: grub-mksecureboot [option] ...
           -b  (Boot path eg: /boot)
           -m  (Modules included in grub, default all is selected [all, luks, normal])
           -k  (Machine Owner Key path, defaults to /root/mok)
+```
+## grub-mkmok Usage 
+```
+Usage: grub-mksecureboot [option] ...
+    Options:
+          -h  (calls help menu)
+          -s  (install shim to specified EFI directory)
+          -k  (generate Machine Owner Keys in specified directory)
+          -d  (distro name eg: gentoo)
 ```
 ## Installation
 To install run.
