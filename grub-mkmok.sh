@@ -30,7 +30,7 @@ release () {
 }
 
 help () {
-    echo "grub-mkmok, version 0.2"
+    echo "grub-mkmok, version 0.3"
     echo "Usage: grub-mkmok [option] ..."
     echo "Options:"
     echo "      -h  (calls help menu)"
@@ -59,7 +59,7 @@ while getopts "hs:k:d:" flag; do
 done
 
 installshim () {
-    if [ $(release) = "1gentoo" ] ; then
+    if [ $(release) = "gentoo" ] ; then
         echo "Gentoo detected"
         if [ -e "/usr/share/shim/BOOTX64.EFI" ] ; then
             cp /usr/share/shim/BOOTX64.EFI $shim/EFI/$1/
