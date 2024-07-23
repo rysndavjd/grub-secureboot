@@ -39,24 +39,25 @@ help () {
     exit 0
 }
 
+if [ "$#" == 0 ]
+then
+    help
+fi
+
 while getopts hd:e:b:m:k: flag; do
     case "${flag}" in
         h) help;;
-        d) distro=${OPTARG};;
-        e) efipath=${OPTARG};;
-        b) bootpath=${OPTARG};;
+        d) distro=${OPTARG}
+        echo "distro set to $distro";;
+        e) efipath=${OPTARG}
+        echo "EFI path set to $efipath.";;
+        b) bootpath=${OPTARG}
+        echo "Boot path set to $bootpath.";;
         m) moduletype=${OPTARG};;
         k) mokpath=${OPTARG};;
         ?) help;;
     esac
 done
-
-if [[ -z $efipath ]] ; then
-    echo "Set -e flag, do -h for help"
-    exit 2
-else 
-    echo "EFI path set to $efipath."
-fi
 
 release () {
     while read -r os ; do
@@ -65,17 +66,8 @@ release () {
 }
 
 if [[ -z $distro ]] ; then
-    echo "-d flag not set using ID from os-release, $(release)."
+    echo "-d flag not set, using ID from os-release, $(release)."
     distro=$(release)
-else
-    echo "distro set to $distro"
-fi
-
-if [[ -z $bootpath ]] ; then
-    echo "Set -b flag, do -h for help"
-    exit 2
-else 
-    echo "Boot path set to $bootpath."
 fi
 
 #sets grubmodules variable
@@ -94,17 +86,13 @@ else
 fi 
 
 #Checks mok path if mok keys exist
-if [[ -z "$mokpath" ]] ; then
-    echo "-k flag not set, defaulting to /root/mok."
-    mokpath="/root/mok"
-    if [ ! -e "$mokpath/MOK.key" ] ; then
-        echo -e "MOK key does not exist.\nRun grub-mkmok to generate mok keys."
-    fi
-else 
-    #echo "-k flag set to $mokpath."
-    if [ ! -e "$mokpath/MOK.key" ] ; then
-        echo -e "MOK key does not exist.\nMake sure mok keys are in format MOK.(key,crt,cer)."
-    fi
+if [[ ! -n $mokpath ]] ; then
+    echo "-k flag not set."
+    echo "Run grub-mkmok to generate keys."
+    exit 2
+ elif [ ! -e "$mokpath/MOK.key" ] ; then
+    echo -e "MOK key does not exist.\nMake sure mok keys are in format MOK.(key,crt,cer)."
+    exit 2
 fi
 
 installpath=$efipath/EFI/$distro
@@ -190,7 +178,7 @@ set prefix="(memdisk)"
 search.fs_uuid $bootuuid root
 configfile (\$root)/grub/grub.cfg
 EOT
-            echo "Layout detected: EFI + unencrypted boot + unencrypted root."
+            echo "Layout detected: EFI + unencrypted boot & root."
         fi
     fi
 }

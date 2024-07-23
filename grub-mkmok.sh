@@ -15,6 +15,12 @@ elif ! command -v mokutil >/dev/null ; then
 elif ! command -v efibootmgr >/dev/null ; then
     echo "Efibootmgr not found. Is efibootmgr installed?"  
     exit 1
+elif ! command -v bsdtar >/dev/null ; then
+    echo "Bsdtar not found. Is bsdtar installed?"  
+    exit 1
+elif ! command -v wget >/dev/null ; then
+    echo "Wget not found. Is wget installed?"
+    exit 1
 fi
 
 release () {
@@ -34,18 +40,26 @@ help () {
     exit 0
 }
 
-while getopts hs:kd: flag; do
-    case "${flag}" in
+if [ "$#" == 0 ]
+then
+    help
+fi
+
+tmp="/tmp/grub-mkmok"
+shimurl="https://kojipkgs.fedoraproject.org//packages/shim/15.8/3/x86_64/shim-x64-15.8-3.x86_64.rpm"
+
+while getopts "hs:k:d:" flag; do
+    case $flag in
         h) help;;
         s) shim=${OPTARG};;
-        k) mok=true;;
+        k) machinekeys=${OPTARG};;
         d) distro=${OPTARG};;
         ?) help;;
     esac
 done
 
 installshim () {
-    if [ $(release) = "gentoo" ] ; then
+    if [ $(release) = "1gentoo" ] ; then
         echo "Gentoo detected"
         if [ -e "/usr/share/shim/BOOTX64.EFI" ] ; then
             cp /usr/share/shim/BOOTX64.EFI $shim/EFI/$1/
@@ -57,12 +71,29 @@ installshim () {
         fi
     elif [ $(release) = "arch" ] ; then
         echo "Archlinux detected"
-        if [ -e "/usr/share/shim/BOOTX64.EFI" ] ; then
+        if [ -e "/usr/share/shim-signed/shimx64.efi" ] ; then
             cp /usr/share/shim-signed/shimx64.efi $shim/EFI/$1/BOOTX64.EFI
             cp /usr/share/shim/mmx64.efi $shim/EFI/$1/
         else
             echo "Shim not found, install it via."
             echo "AUR package: shim-signed"
+        fi
+    else
+        echo "Supported Distros not detected, to download shim-15.8-3 (2024-03-19) from Fedora manually. [y/n]"
+        read -p ":" manlshim
+        if [[ "$manlshim" == "y" ]] ; then
+            echo "Continuing to download shim-15.8-3 (2024-03-19) from Fedora."
+            mkdir -p "$tmp"
+            wget -nv -P "$tmp" "$shimurl" --show-progress
+            echo "Unpacking."
+            bsdtar xf "$tmp/shim-x64-15.8-3.x86_64.rpm" -C "$tmp"
+            cp "$tmp/boot/efi/EFI/BOOT/BOOTX64.EFI" "$shim/EFI/$1/"
+            cp "$tmp/boot/efi/EFI/fedora/mmx64.efi" "$shim/EFI/$1/"
+            rm "$tmp" -r
+            echo "Done."
+        else 
+            echo "Answer No, exiting"
+            exit 0
         fi
     fi
     exit 0
@@ -79,18 +110,23 @@ if [[ ! -z $shim ]] ; then
     fi
 fi
 
-if [ ! -z $mok ] ; then
-    if [ -e "/root/mok/MOK.key" ] ; then 
-        echo -e "MOK keys already exist in /root/mok\nNot overwriting."
+if [[ -z "$machinekeys" ]] ; then
+    echo "-k flag not set."
+    exit 2
+else 
+    echo "-k flag set to $machinekeys."
+    if [ -e "$machinekeys/MOK.key" ] ; then 
+        echo -e "MOK keys already exist in $machinekeys\nNot overwriting."
         exit 2
     else
-        mkdir -p /root/mok
-        cd /root/mok
+        mkdir -p "$machinekeys"
+        cd "$machinekeys"
         openssl req -newkey rsa:2048 -nodes -keyout MOK.key -new -x509 -sha256 -subj "/CN=MOK key/" -out MOK.crt
         openssl x509 -outform DER -in MOK.crt -out MOK.cer
-        chmod 700 /root/mok -R
-        echo -e "MOK keys created in /root/mok"
+        chmod 700 "$machinekeys/MOK.key"
+        chmod 700 "$machinekeys/MOK.crt"
+        chmod 700 "$machinekeys/MOK.cer"
+        echo -e "MOK keys created in $machinekeys"
         exit 0
     fi
 fi
-help
