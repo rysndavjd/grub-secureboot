@@ -9,7 +9,8 @@ Usage: grub-mksecureboot [option] ...
           -e  (EFI path. eg: /efi)
           -b  (Boot path. eg: /boot)
           -m  (Modules included in grub, default is all. eg: [all, luks, normal])
-          -k  (Machine Owner Key path. eg: )
+          -k  (Machine Owner Key path eg: /root/mok)
+          -c  (Put grub.cfg in memdisk)
 ```
 Grub-mkmok is a helper script that sets up initial dependencies for grub-mksecureboot eg: copying of shim to EFI and generation of Machine Owner Keys.
 ## grub-mkmok Usage 

@@ -35,11 +35,12 @@ help () {
     echo "Usage: grub-mksecureboot [option] ..."
     echo "Options:"
     echo "      -h  (calls help menu)"
-    echo "      -d  (distro name eg: gentoo)"
-    echo "      -e  (EFI path eg: /efi)"
-    echo "      -b  (Boot path eg: /boot)"
+    echo "      -d  (distro name. eg: gentoo)"
+    echo "      -e  (EFI path. eg: /efi)"
+    echo "      -b  (Boot path. eg: /boot)"
     echo "      -m  (Modules included in grub, default all is selected [all, luks, normal])"
-    echo "      -k  (Machine Owner Key path, defaults to /root/mok)"
+    echo "      -k  (Machine Owner Key path eg: /root/mok)"
+    echo "      -c  (Put grub.cfg in memdisk)"
     exit 0
 }
 
@@ -48,7 +49,7 @@ then
     help
 fi
 
-while getopts hd:e:b:m:k: flag; do
+while getopts hd:e:b:m:k:c flag; do
     case "${flag}" in
         h) help;;
         d) distro=${OPTARG}
@@ -59,6 +60,7 @@ while getopts hd:e:b:m:k: flag; do
         echo "Boot path set to $bootpath.";;
         m) moduletype=${OPTARG};;
         k) mokpath=${OPTARG};;
+        c) cfginmemdisk=true;;
         ?) help;;
     esac
 done
@@ -99,23 +101,75 @@ if [[ ! -n $mokpath ]] ; then
     exit 2
 fi
 
+#starting variables/functions
 installpath=$efipath/EFI/$distro
 memdiskdir="$tmp/memdiskdir"
+cryptodiskuuidboot=$(grub-probe $bootpath -t cryptodisk_uuid)
+bootuuid=$(grub-probe -t fs_uuid $bootpath)
+efiuuid=$(grub-probe -t fs_uuid $efipath)
+rootuuid=$(grub-probe -t fs_uuid /)
+cryptodisk () {
+    grub-probe -t drive $1 | grep cryptouuid >> /dev/null 2>&1
+    return $?
+}
+#makes directories for generation
 mkdir -p $installpath
 mkdir -p $tmp
 mkdir -p $memdiskdir/memdisk/fonts
+mkdir -p $memdiskdir/memdisk/grub
+
+genbootcfg () {
+    if [[ $cfginmemdisk == true ]] ; then
+        if [[ ! -e "/boot/grub/grub.cfg" ]] ; then
+            echo "/boot/grub/grub.cfg, doesnt exist, generate a cfg to include into memdisk."
+            exit 3
+        fi
+        cp /boot/grub/grub.cfg $memdiskdir/memdisk/grub/
+        cat <<EOT >> $memdiskdir/grub-bootstrap.cfg
+set prefix="(memdisk)"
+configfile (memdisk)/grub/grub.cfg
+EOT
+    else
+        #encrypted root with boot
+        if [[ $1 == "erwb" ]] ; then
+            cat <<EOT >> $memdiskdir/grub-bootstrap.cfg
+cryptomount -u $cryptodiskuuidboot
+set prefix="(memdisk)"
+configfile (crypto0)/boot/grub/grub.cfg
+EOT
+        #encrypted boot encrypted root
+        elif [[ $1 == "eber" ]] ; then
+            cat <<EOT >> $memdiskdir/grub-bootstrap.cfg
+cryptomount -u $cryptodiskuuidboot
+set prefix="(memdisk)"
+configfile (crypto0)/grub/grub.cfg
+EOT
+        #unencrypted boot encrypted root
+        elif [[ $1 == "uber" ]] ; then
+            cat <<EOT >> $memdiskdir/grub-bootstrap.cfg
+prefix="(memdisk)"
+search.fs_uuid $bootuuid root
+configfile (\$root)/grub/grub.cfg
+EOT
+        #unencrypted root with boot
+        elif [[ $1 == "urwb" ]] ; then
+            cat <<EOT >> $memdiskdir/grub-bootstrap.cfg
+set prefix="(memdisk)"
+search.fs_uuid $bootuuid root
+configfile (\$root)/boot/grub/grub.cfg
+EOT
+        #unencrypted boot unencrypted root
+        elif [[ $1 == "ubur" ]] ; then
+            cat <<EOT >> $memdiskdir/grub-bootstrap.cfg
+set prefix="(memdisk)"
+search.fs_uuid $bootuuid root
+configfile (\$root)/grub/grub.cfg
+EOT
+        fi
+    fi
+}
 
 checklayout () {
-    cryptodiskuuidboot=$(grub-probe $bootpath -t cryptodisk_uuid)
-    bootuuid=$(grub-probe -t fs_uuid $bootpath)
-    efiuuid=$(grub-probe -t fs_uuid $efipath)
-    rootuuid=$(grub-probe -t fs_uuid /)
-
-    cryptodisk () {
-        grub-probe -t drive $1 | grep cryptouuid >> /dev/null 2>&1
-        return $?
-    }
-
     #check if / is encrypted
     if cryptodisk / ; then
         #check if boot is actual on root that is encrypted as one partition via its uuid
@@ -123,11 +177,7 @@ checklayout () {
             #Here assume disk layout is 
             #efi - unencrypted
             #root - encrypted with /boot on it
-            cat <<EOT >> $memdiskdir/grub-bootstrap.cfg
-cryptomount -u $cryptodiskuuidboot
-set prefix="(memdisk)"
-configfile (crypto0)/boot/grub/grub.cfg
-EOT
+            genbootcfg erwb
             echo "Layout detected: EFI + encrypted root with boot."
         #boot is separate partition as uuid not equal
         elif [[ $bootuuid != $rootuuid ]] ; then
@@ -137,22 +187,14 @@ EOT
                 #efi - unencrypted
                 #boot - encrypted
                 #root - encrypted
-                cat <<EOT >> $memdiskdir/grub-bootstrap.cfg
-cryptomount -u $cryptodiskuuidboot
-set prefix="(memdisk)"
-configfile (crypto0)/grub/grub.cfg
-EOT
+                genbootcfg eber
                 echo "Layout detected: EFI + encrypted boot + encrypted root."
             else
                 #Here assume disk layout is 
                 #efi - unencrypted
                 #boot - unencrypted
                 #root - encrypted
-                cat <<EOT >> $memdiskdir/grub-bootstrap.cfg
-prefix="(memdisk)"
-search.fs_uuid $bootuuid root
-configfile (\$root)/grub/grub.cfg
-EOT
+                genbootcfg uber
                 echo "Layout detected: EFI + unencrypted boot + encrypted root."
             fi
         fi
@@ -163,11 +205,7 @@ EOT
             #Here assume disk layout is 
             #efi - unencrypted
             #root - unencrypted with /boot on it
-            cat <<EOT >> $memdiskdir/grub-bootstrap.cfg
-set prefix="(memdisk)"
-search.fs_uuid $bootuuid root
-configfile (\$root)/boot/grub/grub.cfg
-EOT
+            genbootcfg urwb
             echo "Layout detected: EFI + unencrypted root with boot"
         elif [[ $bootuuid != $rootuuid ]] ; then
             #Here assume disk layout is 
@@ -177,12 +215,8 @@ EOT
             #or 
             #efi + boot - unencrypted
             #root - unencrypted
-            cat <<EOT >> $memdiskdir/grub-bootstrap.cfg
-set prefix="(memdisk)"
-search.fs_uuid $bootuuid root
-configfile (\$root)/grub/grub.cfg
-EOT
-            echo "Layout detected: EFI + unencrypted boot & root."
+            genbootcfg ubur
+            echo "Layout detected: EFI + unencrypted boot + unencrypted root."
         fi
     fi
 }
@@ -198,5 +232,9 @@ echo "Grub EFI image generated, signed and installed at "$installpath/grubx64.ef
 
 checklayout
 makegrub
-echo "Remember to generate grub.cfg at /boot/grub/grub.cfg"
+if [[ $cfginmemdisk == true ]] ; then
+    echo -e "Remember to generate grub.cfg at /boot/grub/grub.cfg,\nbefore running this script to ensure latest grub.cfg is in memdisk."
+else
+    echo "Remember to generate grub.cfg at /boot/grub/grub.cfg."
+fi
 echo "Finished"
