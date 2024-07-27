@@ -40,6 +40,7 @@ help () {
     echo "      -b  (Boot path eg: /boot)"
     echo "      -m  (Modules included in grub, default all is selected [all, luks, normal])"
     echo "      -k  (Machine Owner Key path, defaults to /root/mok)"
+    echo "      -p  (Generate grub preboot menu via config at /etc/default/grub-preboot)"
     exit 0
 }
 
@@ -48,7 +49,7 @@ then
     help
 fi
 
-while getopts hd:e:b:m:k: flag; do
+while getopts hd:e:b:m:k:p flag; do
     case "${flag}" in
         h) help;;
         d) distro=${OPTARG}
@@ -59,6 +60,7 @@ while getopts hd:e:b:m:k: flag; do
         echo "Boot path set to $bootpath.";;
         m) moduletype=${OPTARG};;
         k) mokpath=${OPTARG};;
+        p) grubpreboot=true;;
         ?) help;;
     esac
 done
