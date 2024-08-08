@@ -31,7 +31,7 @@ elif ! command -v wget >/dev/null; then
 fi
 
 help () {
-    echo "grub-mksecureboot, version 0.3"
+    echo "grub-mksecureboot, version 0.4"
     echo "Usage: grub-mksecureboot [option] ..."
     echo "Options:"
     echo "      -h  (calls help menu)"

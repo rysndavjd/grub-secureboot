@@ -22,26 +22,12 @@ Usage: grub-mksecureboot [option] ...
           -k  (generate Machine Owner Keys in specified directory. eg: /root/mok)
           -d  (distro name. eg: gentoo)
 ```
-## Installation
 ### Dependencies: 
 Gentoo
 ```
-emerge -av sys-boot/shim sys-boot/mokutil sys-boot/efibootmgr dev-libs/openssl app-arch/libarchive net-misc/wget
+emerge -av sys-boot/shim sys-boot/mokutil sys-boot/efibootmgr dev-libs/openssl app-arch/libarchive net-misc/wget app-shells/bash
 ```
 Archlinux (Note: [shim-signed](https://aur.archlinux.org/packages/shim-signed) is required from the AUR.)
 ```
-pacman -S mokutil efibootmgr openssl libarchive wget
-```
-### Install:
-To install run.
-```
-make install
-```
-To uninstall run.
-```
-make uninstall
-```
-To change install directory from the default of /usr/local/sbin edit the Makefile like so.
-```Makefile
-installdir=/to/whatever/directory/you/wish
+pacman -S mokutil efibootmgr openssl libarchive wget bash
 ```

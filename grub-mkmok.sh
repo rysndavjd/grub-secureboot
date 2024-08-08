@@ -30,7 +30,7 @@ release () {
 }
 
 help () {
-    echo "grub-mkmok, version 0.3"
+    echo "grub-mkmok, version 0.4"
     echo "Usage: grub-mkmok [option] ..."
     echo "Options:"
     echo "      -h  (calls help menu)"
