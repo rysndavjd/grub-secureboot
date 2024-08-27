@@ -7,14 +7,8 @@ then
     exit 1
 fi
 
-tmp="/tmp/grub-secureboot"
-ipxeurl="http://boot.ipxe.org/ipxe.efi"
-
-trap clean INT
-
-clean () {
-    rm $tmp -r
-}
+tmp=$(mktemp -d)
+shversion="0.5.1"
 
 if ! command -v mksquashfs >/dev/null; then
     echo "mksquashfs not found. Is squashfs-tools installed?" 
@@ -31,7 +25,7 @@ elif ! command -v wget >/dev/null; then
 fi
 
 help () {
-    echo "grub-mksecureboot, version 0.4"
+    echo "grub-mksecureboot, version $shversion"
     echo "Usage: grub-mksecureboot [option] ..."
     echo "Options:"
     echo "      -h  (calls help menu)"
@@ -41,6 +35,7 @@ help () {
     echo "      -m  (Modules included in grub, default all is selected [all, luks, normal])"
     echo "      -k  (Machine Owner Key path eg: /root/mok)"
     echo "      -c  (Put grub.cfg in memdisk)"
+#    echo "      -f  (Add grub image to EFI BootOrder)"
     exit 0
 }
 
@@ -61,6 +56,7 @@ while getopts hd:e:b:m:k:c flag; do
         m) moduletype=${OPTARG};;
         k) mokpath=${OPTARG};;
         c) cfginmemdisk=true;;
+#        f) efibootorder=true;;
         ?) help;;
     esac
 done
@@ -195,7 +191,6 @@ cp -R /usr/share/grub/unicode.pf2 "/$memdiskdir/memdisk/fonts"
 mksquashfs "$memdiskdir/memdisk" "$memdiskdir/memdisk.squashfs" -comp gzip >> /dev/null 2>&1
 grub-mkimage --config="$memdiskdir/grub-bootstrap.cfg" --directory=/usr/lib/grub/x86_64-efi --output=$installpath/grubx64.efi --sbat=/usr/share/grub/sbat.csv --format=x86_64-efi --memdisk="$memdiskdir/memdisk.squashfs" $grubmodules
 sbsign --key $mokpath/MOK.key --cert $mokpath/MOK.crt --output "$installpath/grubx64.efi" "$installpath/grubx64.efi" >> /dev/null 2>&1
-clean
 echo "Grub EFI image generated, signed and installed at "$installpath/grubx64.efi""
 }
 
@@ -219,4 +214,9 @@ if [[ $cfginmemdisk == true ]] ; then
 else
     echo "Remember to generate grub.cfg at /boot/grub/grub.cfg."
 fi
+#
+#if [[ $efibootorder == true ]] ; then
+#    efibootmgr -c -L "Grub" -l "$efipath\\EFI\\$distro\\grubx64.efi"
+#    echo "Grub image added to first in EFI BootOrder."
+#fi
 echo "Finished"
