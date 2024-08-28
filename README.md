@@ -25,9 +25,9 @@ Usage: grub-mksecureboot [option] ...
 ### Dependencies: 
 Gentoo
 ```
-emerge -av sys-boot/shim sys-boot/mokutil sys-boot/efibootmgr dev-libs/openssl app-arch/libarchive net-misc/wget app-shells/bash
+emerge -av sys-boot/shim sys-boot/mokutil sys-boot/efibootmgr dev-libs/openssl app-arch/libarchive net-misc/wget app-shells/bash sys-boot/grub
 ```
 Archlinux (Note: [shim-signed](https://aur.archlinux.org/packages/shim-signed) is required from the AUR.)
 ```
-pacman -S mokutil efibootmgr openssl libarchive wget bash
+pacman -S mokutil efibootmgr openssl libarchive wget bash grub
 ```
