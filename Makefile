@@ -18,7 +18,9 @@ release: clean
 
 install:
 	mkdir -p ${DESTDIR}${PREFIX}/bin
+	touch ${DESTDIR}${PREFIX}/bin/grub-mksecureboot
 	cp -f grub-mksecureboot.sh ${DESTDIR}${PREFIX}/bin/grub-mksecureboot
+	touch ${DESTDIR}${PREFIX}/bin/grub-mkmok
 	cp -f grub-mkmok.sh ${DESTDIR}${PREFIX}/bin/grub-mkmok
 	chmod 755 ${DESTDIR}${PREFIX}/bin/grub-mksecureboot
 	chmod 755 ${DESTDIR}${PREFIX}/bin/grub-mkmok
