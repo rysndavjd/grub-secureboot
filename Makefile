@@ -10,9 +10,9 @@ clean:
 
 release: clean
 	mkdir -p grub-secureboot-${VERSION}
-	cp -R LICENSE Makefile README.md config.mk 
+	cp -R LICENSE Makefile README.md config.mk \
 		grub-mkmok.sh grub-mksecureboot.sh grub-secureboot-${VERSION}
-	tar -cf grub-secureboot-${VERSION}.tar dwm-rysn-${VERSION}
+	tar -cf grub-secureboot-${VERSION}.tar grub-secureboot-${VERSION}
 	gzip grub-secureboot-${VERSION}.tar
 	rm -rf grub-secureboot-${VERSION}
 
@@ -26,5 +26,3 @@ install:
 uninstall:
 	rm -fr ${DESTDIR}${PREFIX}/bin/grub-mksecureboot \
 		${DESTDIR}${PREFIX}/bin/grub-mkmok 
-
-.PHONY: all options clean release install uninstall
