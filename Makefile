@@ -26,3 +26,5 @@ install:
 uninstall:
 	rm -fr ${DESTDIR}${PREFIX}/bin/grub-mksecureboot \
 		${DESTDIR}${PREFIX}/bin/grub-mkmok 
+
+.PHONY: all clean release install uninstall
