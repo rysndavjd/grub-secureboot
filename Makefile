@@ -18,10 +18,10 @@ release: clean
 
 install:
 	mkdir -p ${DESTDIR}${PREFIX}/bin
-	cp -f grub-mksecureboot.sh ${DESTDIR}${PREFIX}/bin
-	cp -f grub-mkmok.sh ${DESTDIR}${PREFIX}/bin
-	chmod 755 ${DESTDIR}${PREFIX}/bin/grub-mksecureboot.sh
-	chmod 755 ${DESTDIR}${PREFIX}/bin/grub-mkmok.sh
+	cp -f grub-mksecureboot.sh ${DESTDIR}${PREFIX}/bin/grub-mksecureboot
+	cp -f grub-mkmok.sh ${DESTDIR}${PREFIX}/bin/grub-mkmok
+	chmod 755 ${DESTDIR}${PREFIX}/bin/grub-mksecureboot
+	chmod 755 ${DESTDIR}${PREFIX}/bin/grub-mkmok
 
 uninstall:
 	rm -fr ${DESTDIR}${PREFIX}/bin/grub-mksecureboot \
