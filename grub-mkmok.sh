@@ -1,25 +1,11 @@
 #!/bin/bash
 
+# Copyright 2024 rysndavjd
+# Distributed under the terms of the GNU General Public License v2
+
 if [[ $EUID -ne 0 ]]
 then 
     echo "Run as root."
-    exit 1
-fi
-
-if ! command -v openssl >/dev/null ; then
-    echo "Openssl not found. Is openssl installed?"  
-    exit 1
-elif ! command -v mokutil >/dev/null ; then
-    echo "Mokutil not found. Is mokutil installed?"  
-    exit 1
-elif ! command -v efibootmgr >/dev/null ; then
-    echo "Efibootmgr not found. Is efibootmgr installed?"  
-    exit 1
-elif ! command -v bsdtar >/dev/null ; then
-    echo "Bsdtar not found. Is bsdtar installed?"  
-    exit 1
-elif ! command -v wget >/dev/null ; then
-    echo "Wget not found. Is wget installed?"
     exit 1
 fi
 
@@ -30,12 +16,12 @@ release () {
 }
 
 help () {
-    echo "grub-mkmok, version 0.4"
+    echo "grub-mkmok, version 0.5.2"
     echo "Usage: grub-mkmok [option] ..."
     echo "Options:"
     echo "      -h  (calls help menu)"
     echo "      -s  (install shim to specified EFI directory)"
-    echo "      -k  (generate Machine Owner Keys in /root/mok)"
+    echo "      -k  (generate Machine Owner Keys in specified directory)"
     echo "      -d  (distro name eg: gentoo)"
     exit 0
 }
@@ -45,7 +31,7 @@ then
     help
 fi
 
-tmp="/tmp/grub-mkmok"
+tmp=$(mktemp -d)
 shimurl="https://kojipkgs.fedoraproject.org//packages/shim/15.8/3/x86_64/shim-x64-15.8-3.x86_64.rpm"
 
 while getopts "hs:k:d:" flag; do
@@ -73,7 +59,7 @@ installshim () {
         echo "Archlinux detected"
         if [ -e "/usr/share/shim-signed/shimx64.efi" ] ; then
             cp /usr/share/shim-signed/shimx64.efi $shim/EFI/$1/BOOTX64.EFI
-            cp /usr/share/shim/mmx64.efi $shim/EFI/$1/
+            cp /usr/share/shim-signed/mmx64.efi $shim/EFI/$1/
         else
             echo "Shim not found, install it via."
             echo "AUR package: shim-signed"
@@ -99,7 +85,6 @@ installshim () {
     exit 0
 }
 
-
 if [[ ! -z $shim ]] ; then 
     if [ -z $distro ] ; then 
         echo "-d not set, defaulting on ID from os-release"
@@ -121,7 +106,7 @@ else
     else
         mkdir -p "$machinekeys"
         cd "$machinekeys"
-        openssl req -newkey rsa:2048 -nodes -keyout MOK.key -new -x509 -sha256 -subj "/CN=MOK key/" -out MOK.crt
+        openssl req -newkey rsa:2048 -nodes -keyout MOK.key -new -x509 -sha256 -subj "/CN=MOK key: $(cat /etc/hostname)/" -out MOK.crt
         openssl x509 -outform DER -in MOK.crt -out MOK.cer
         chmod 700 "$machinekeys/MOK.key"
         chmod 700 "$machinekeys/MOK.crt"

@@ -1,4 +1,8 @@
 #!/bin/bash
+
+# Copyright 2024 rysndavjd
+# Distributed under the terms of the GNU General Public License v2
+
 set -e
 
 if [[ $EUID -ne 0 ]]
@@ -8,21 +12,7 @@ then
 fi
 
 tmp=$(mktemp -d)
-shversion="0.5.1"
-
-if ! command -v mksquashfs >/dev/null; then
-    echo "mksquashfs not found. Is squashfs-tools installed?" 
-    exit 1
-elif ! command -v grub-mkimage >/dev/null; then
-    echo "grub-mkimage not found. Is grub installed?" 
-    exit 1
-elif ! command -v sbsign >/dev/null; then
-    echo "sbsign not found. Is sbsigntools installed?" 
-    exit 1
-elif ! command -v wget >/dev/null; then
-    echo "wget not found. Is wget installed?" 
-    exit 1
-fi
+shversion="0.5.2"
 
 help () {
     echo "grub-mksecureboot, version $shversion"
@@ -35,7 +25,6 @@ help () {
     echo "      -m  (Modules included in grub, default all is selected [all, luks, normal])"
     echo "      -k  (Machine Owner Key path eg: /root/mok)"
     echo "      -c  (Put grub.cfg in memdisk)"
-#    echo "      -f  (Add grub image to EFI BootOrder)"
     exit 0
 }
 
@@ -56,7 +45,6 @@ while getopts hd:e:b:m:k:c flag; do
         m) moduletype=${OPTARG};;
         k) mokpath=${OPTARG};;
         c) cfginmemdisk=true;;
-#        f) efibootorder=true;;
         ?) help;;
     esac
 done
@@ -214,9 +202,5 @@ if [[ $cfginmemdisk == true ]] ; then
 else
     echo "Remember to generate grub.cfg at /boot/grub/grub.cfg."
 fi
-#
-#if [[ $efibootorder == true ]] ; then
-#    efibootmgr -c -L "Grub" -l "$efipath\\EFI\\$distro\\grubx64.efi"
-#    echo "Grub image added to first in EFI BootOrder."
-#fi
+
 echo "Finished"
