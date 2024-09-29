@@ -3,7 +3,7 @@
 
 include config.mk
 
-all: install
+all:
 
 clean:
 	rm -f grub-secureboot-${VERSION}.tar.gz
